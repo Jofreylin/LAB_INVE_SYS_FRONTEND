@@ -17,13 +17,16 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { BeakerIcon, PlusIcon, PencilIcon, Trash2Icon, ShieldAlertIcon } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { BeakerIcon, PlusIcon, PencilIcon, Trash2Icon, ShieldAlertIcon, DollarSignIcon } from "lucide-react"
 import { toast } from "sonner"
-import { Product, ProductDTO } from "@/lib/types"
+import { Product, ProductDTO, Supplier } from "@/lib/types"
 import { ProductService } from "@/lib/services/productService"
+import { SupplierService } from "@/lib/services/supplierService"
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([])
+  const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [loading, setLoading] = useState(true)
   const [productToEdit, setProductToEdit] = useState<Product | null>(null)
   const [productToDelete, setProductToDelete] = useState<Product | null>(null)
@@ -31,22 +34,31 @@ export default function ProductsPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [formData, setFormData] = useState<ProductDTO>({
     name: "",
-    description: ""
+    description: "",
+    commonPurchasePrice: 0,
+    regularSalePrice: 0,
+    maxSalePrice: 0,
+    minSalePrice: 0,
+    supplierId: undefined
   })
   const router = useRouter()
 
   useEffect(() => {
-    fetchProducts()
+    fetchData()
   }, [])
 
-  const fetchProducts = async () => {
+  const fetchData = async () => {
     try {
       setLoading(true)
-      const data = await ProductService.getList()
-      setProducts(data)
+      const [productsData, suppliersData] = await Promise.all([
+        ProductService.getList(),
+        SupplierService.getList()
+      ])
+      setProducts(productsData)
+      setSuppliers(suppliersData.filter(s => !s.isDeleted))
     } catch (error) {
-      console.error("Error al cargar productos:", error)
-      toast.error("No se pudieron cargar los productos")
+      console.error("Error al cargar datos:", error)
+      toast.error("No se pudieron cargar los datos")
     } finally {
       setLoading(false)
     }
@@ -56,9 +68,9 @@ export default function ProductsPage() {
     try {
       await ProductService.create(formData)
       toast.success("Producto creado exitosamente")
-      setFormData({ name: "", description: "" })
+      resetForm()
       setIsDialogOpen(false)
-      fetchProducts()
+      fetchData()
     } catch (error) {
       console.error("Error al crear producto:", error)
       toast.error("No se pudo crear el producto")
@@ -71,10 +83,10 @@ export default function ProductsPage() {
     try {
       await ProductService.update(productToEdit.productId, formData)
       toast.success("Producto actualizado exitosamente")
-      setFormData({ name: "", description: "" })
+      resetForm()
       setProductToEdit(null)
       setIsDialogOpen(false)
-      fetchProducts()
+      fetchData()
     } catch (error) {
       console.error("Error al actualizar producto:", error)
       toast.error("No se pudo actualizar el producto")
@@ -89,7 +101,7 @@ export default function ProductsPage() {
       toast.success("Producto eliminado exitosamente")
       setProductToDelete(null)
       setIsDeleteDialogOpen(false)
-      fetchProducts()
+      fetchData()
     } catch (error) {
       console.error("Error al eliminar producto:", error)
       toast.error("No se pudo eliminar el producto")
@@ -100,7 +112,12 @@ export default function ProductsPage() {
     setProductToEdit(product)
     setFormData({
       name: product.name,
-      description: product.description || ""
+      description: product.description || "",
+      commonPurchasePrice: product.commonPurchasePrice || 0,
+      regularSalePrice: product.regularSalePrice || 0,
+      maxSalePrice: product.maxSalePrice || 0,
+      minSalePrice: product.minSalePrice || 0,
+      supplierId: product.supplierId
     })
     setIsDialogOpen(true)
   }
@@ -112,14 +129,26 @@ export default function ProductsPage() {
 
   const openCreateDialog = () => {
     setProductToEdit(null)
-    setFormData({ name: "", description: "" })
+    resetForm()
     setIsDialogOpen(true)
+  }
+
+  const resetForm = () => {
+    setFormData({
+      name: "", 
+      description: "",
+      commonPurchasePrice: 0,
+      regularSalePrice: 0,
+      maxSalePrice: 0,
+      minSalePrice: 0,
+      supplierId: undefined
+    })
   }
 
   const closeDialog = () => {
     setIsDialogOpen(false)
     setProductToEdit(null)
-    setFormData({ name: "", description: "" })
+    resetForm()
   }
 
   const viewProductStock = (productId: number) => {
@@ -165,6 +194,8 @@ export default function ProductsPage() {
                       <TableHead>ID</TableHead>
                       <TableHead>Nombre</TableHead>
                       <TableHead className="hidden md:table-cell">Descripción</TableHead>
+                      <TableHead className="hidden md:table-cell">Precio Venta</TableHead>
+                      <TableHead className="hidden lg:table-cell">Laboratorio</TableHead>
                       <TableHead className="hidden md:table-cell">Creado</TableHead>
                       <TableHead>Acciones</TableHead>
                     </TableRow>
@@ -181,6 +212,12 @@ export default function ProductsPage() {
                             </div>
                           </TableCell>
                           <TableCell className="hidden md:table-cell">{product.description || "—"}</TableCell>
+                          <TableCell className="hidden md:table-cell">
+                            {product.regularSalePrice ? `$${product.regularSalePrice.toFixed(2)}` : "—"}
+                          </TableCell>
+                          <TableCell className="hidden lg:table-cell">
+                            {product.supplierId && suppliers.find(s => s.supplierId === product.supplierId)?.name || "—"}
+                          </TableCell>
                           <TableCell className="hidden md:table-cell">
                             {product.createdAt ? new Date(product.createdAt).toLocaleDateString() : "—"}
                           </TableCell>
@@ -248,6 +285,8 @@ export default function ProductsPage() {
                       <TableHead>ID</TableHead>
                       <TableHead>Name</TableHead>
                       <TableHead className="hidden md:table-cell">Description</TableHead>
+                      <TableHead className="hidden md:table-cell">Sale Price</TableHead>
+                      <TableHead className="hidden lg:table-cell">Laboratory</TableHead>
                       <TableHead className="hidden md:table-cell">Created</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
@@ -266,6 +305,12 @@ export default function ProductsPage() {
                               </div>
                             </TableCell>
                             <TableCell className="hidden md:table-cell">{product.description || "—"}</TableCell>
+                            <TableCell className="hidden md:table-cell">
+                              {product.regularSalePrice ? `$${product.regularSalePrice.toFixed(2)}` : "—"}
+                            </TableCell>
+                            <TableCell className="hidden lg:table-cell">
+                              {product.supplierId && suppliers.find(s => s.supplierId === product.supplierId)?.name || "—"}
+                            </TableCell>
                             <TableCell className="hidden md:table-cell">
                               {product.createdAt ? new Date(product.createdAt).toLocaleDateString() : "—"}
                             </TableCell>
@@ -341,6 +386,93 @@ export default function ProductsPage() {
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Enter product description (optional)"
               />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="commonPurchasePrice">Purchase Price</Label>
+                <div className="relative">
+                  <DollarSignIcon className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="commonPurchasePrice"
+                    type="number"
+                    className="pl-8"
+                    value={formData.commonPurchasePrice || 0}
+                    onChange={(e) => setFormData({ ...formData, commonPurchasePrice: parseFloat(e.target.value) })}
+                    placeholder="0.00"
+                    step="0.01"
+                    min="0"
+                  />
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="regularSalePrice">Regular Sale Price</Label>
+                <div className="relative">
+                  <DollarSignIcon className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="regularSalePrice"
+                    type="number"
+                    className="pl-8"
+                    value={formData.regularSalePrice || 0}
+                    onChange={(e) => setFormData({ ...formData, regularSalePrice: parseFloat(e.target.value) })}
+                    placeholder="0.00"
+                    step="0.01"
+                    min="0"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="minSalePrice">Min Sale Price</Label>
+                <div className="relative">
+                  <DollarSignIcon className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="minSalePrice"
+                    type="number"
+                    className="pl-8"
+                    value={formData.minSalePrice || 0}
+                    onChange={(e) => setFormData({ ...formData, minSalePrice: parseFloat(e.target.value) })}
+                    placeholder="0.00"
+                    step="0.01"
+                    min="0"
+                  />
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="maxSalePrice">Max Sale Price</Label>
+                <div className="relative">
+                  <DollarSignIcon className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="maxSalePrice"
+                    type="number"
+                    className="pl-8"
+                    value={formData.maxSalePrice || 0}
+                    onChange={(e) => setFormData({ ...formData, maxSalePrice: parseFloat(e.target.value) })}
+                    placeholder="0.00"
+                    step="0.01"
+                    min="0"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="supplier">Laboratory</Label>
+              <Select
+                value={formData.supplierId?.toString() || "0"}
+                onValueChange={(value) => setFormData({ ...formData, supplierId: value !== "0" ? parseInt(value) : undefined })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a laboratory" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">None</SelectItem>
+                  {suppliers.map((supplier) => (
+                    <SelectItem key={supplier.supplierId} value={supplier.supplierId.toString()}>
+                      {supplier.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>
