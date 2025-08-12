@@ -171,7 +171,7 @@ export default function ProductsPage() {
       <Tabs defaultValue="all" className="space-y-4">
         <TabsList>
           <TabsTrigger value="all">Todos los Productos</TabsTrigger>
-          <TabsTrigger value="active">Activos</TabsTrigger>
+          {/* <TabsTrigger value="active">Activos</TabsTrigger> */}
         </TabsList>
         
         <TabsContent value="all" className="space-y-4">
@@ -239,14 +239,14 @@ export default function ProductsPage() {
                                 <Trash2Icon className="h-4 w-4" />
                                 <span className="sr-only">Eliminar</span>
                               </Button>
-                              <Button 
+                              {/* <Button 
                                 variant="ghost" 
                                 size="icon" 
                                 onClick={() => viewProductStock(product.productId)}
                               >
                                 <ShieldAlertIcon className="h-4 w-4" />
                                 <span className="sr-only">Ver Existencias</span>
-                              </Button>
+                              </Button> */}
                             </div>
                           </TableCell>
                         </TableRow>
@@ -254,7 +254,7 @@ export default function ProductsPage() {
                     ) : (
                       <TableRow>
                         <TableCell colSpan={5} className="h-24 text-center">
-                          No products found.
+                          No se encontraron productos.
                         </TableCell>
                       </TableRow>
                     )}
@@ -268,27 +268,27 @@ export default function ProductsPage() {
         <TabsContent value="active" className="space-y-4">
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle>Active Products</CardTitle>
+              <CardTitle>Productos Activos</CardTitle>
               <CardDescription>
-                List of active laboratory products
+                Lista de productos de laboratorio activos
               </CardDescription>
             </CardHeader>
             <CardContent>
               {loading ? (
                 <div className="flex justify-center py-8">
-                  <p>Loading products...</p>
+                  <p>Cargando productos...</p>
                 </div>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>ID</TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead className="hidden md:table-cell">Description</TableHead>
-                      <TableHead className="hidden md:table-cell">Sale Price</TableHead>
-                      <TableHead className="hidden lg:table-cell">Laboratory</TableHead>
-                      <TableHead className="hidden md:table-cell">Created</TableHead>
-                      <TableHead>Actions</TableHead>
+                      <TableHead>Nombre</TableHead>
+                      <TableHead className="hidden md:table-cell">Descripción</TableHead>
+                      <TableHead className="hidden md:table-cell">Precio Venta</TableHead>
+                      <TableHead className="hidden lg:table-cell">Laboratorio</TableHead>
+                      <TableHead className="hidden md:table-cell">Creado</TableHead>
+                      <TableHead>Acciones</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -322,7 +322,7 @@ export default function ProductsPage() {
                                   onClick={() => openEditDialog(product)}
                                 >
                                   <PencilIcon className="h-4 w-4" />
-                                  <span className="sr-only">Edit</span>
+                                  <span className="sr-only">Editar</span>
                                 </Button>
                                 <Button 
                                   variant="ghost" 
@@ -330,7 +330,7 @@ export default function ProductsPage() {
                                   onClick={() => openDeleteDialog(product)}
                                 >
                                   <Trash2Icon className="h-4 w-4" />
-                                  <span className="sr-only">Delete</span>
+                                  <span className="sr-only">Eliminar</span>
                                 </Button>
                                 <Button 
                                   variant="ghost" 
@@ -338,7 +338,7 @@ export default function ProductsPage() {
                                   onClick={() => viewProductStock(product.productId)}
                                 >
                                   <ShieldAlertIcon className="h-4 w-4" />
-                                  <span className="sr-only">View Stock</span>
+                                  <span className="sr-only">Ver Existencias</span>
                                 </Button>
                               </div>
                             </TableCell>
@@ -347,7 +347,7 @@ export default function ProductsPage() {
                     ) : (
                       <TableRow>
                         <TableCell colSpan={5} className="h-24 text-center">
-                          No active products found.
+                          No se encontraron productos activos.
                         </TableCell>
                       </TableRow>
                     )}
@@ -363,33 +363,33 @@ export default function ProductsPage() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>{productToEdit ? "Edit Product" : "Create Product"}</DialogTitle>
+            <DialogTitle>{productToEdit ? "Editar Producto" : "Crear Producto"}</DialogTitle>
             <DialogDescription>
-              {productToEdit ? "Update product details" : "Add a new product to the inventory"}
+              {productToEdit ? "Actualizar detalles del producto" : "Agregar un nuevo producto al inventario"}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">Name</Label>
+              <Label htmlFor="name">Nombre</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Enter product name"
+                placeholder="Ingrese el nombre del producto"
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">Descripción</Label>
               <Input
                 id="description"
                 value={formData.description || ""}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Enter product description (optional)"
+                placeholder="Ingrese la descripción del producto (opcional)"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="commonPurchasePrice">Purchase Price</Label>
+                <Label htmlFor="commonPurchasePrice">Precio de Compra</Label>
                 <div className="relative">
                   <DollarSignIcon className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -405,7 +405,7 @@ export default function ProductsPage() {
                 </div>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="regularSalePrice">Regular Sale Price</Label>
+                <Label htmlFor="regularSalePrice">Precio de Venta Regular</Label>
                 <div className="relative">
                   <DollarSignIcon className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -423,7 +423,7 @@ export default function ProductsPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="minSalePrice">Min Sale Price</Label>
+                <Label htmlFor="minSalePrice">Precio de Venta Mínimo</Label>
                 <div className="relative">
                   <DollarSignIcon className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -439,7 +439,7 @@ export default function ProductsPage() {
                 </div>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="maxSalePrice">Max Sale Price</Label>
+                <Label htmlFor="maxSalePrice">Precio de Venta Máximo</Label>
                 <div className="relative">
                   <DollarSignIcon className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -456,16 +456,16 @@ export default function ProductsPage() {
               </div>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="supplier">Laboratory</Label>
+              <Label htmlFor="supplierId">Laboratorio</Label>
               <Select
                 value={formData.supplierId?.toString() || "0"}
                 onValueChange={(value) => setFormData({ ...formData, supplierId: value !== "0" ? parseInt(value) : undefined })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a laboratory" />
+                  <SelectValue placeholder="Seleccione un laboratorio" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="0">None</SelectItem>
+                  <SelectItem value="0">Ninguno</SelectItem>
                   {suppliers.map((supplier) => (
                     <SelectItem key={supplier.supplierId} value={supplier.supplierId.toString()}>
                       {supplier.name}
@@ -476,9 +476,9 @@ export default function ProductsPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={closeDialog}>Cancel</Button>
+            <Button variant="outline" onClick={closeDialog}>Cancelar</Button>
             <Button onClick={productToEdit ? handleUpdateProduct : handleCreateProduct}>
-              {productToEdit ? "Save Changes" : "Create Product"}
+              {productToEdit ? "Guardar Cambios" : "Crear Producto"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -488,9 +488,9 @@ export default function ProductsPage() {
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Delete Product</DialogTitle>
+            <DialogTitle>Eliminar Producto</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this product? This action cannot be undone.
+              ¿Está seguro de que desea eliminar este producto? Esta acción no se puede deshacer.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
@@ -498,8 +498,8 @@ export default function ProductsPage() {
             <p className="text-muted-foreground text-sm mt-1">{productToDelete?.description}</p>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleDeleteProduct}>Delete Product</Button>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleDeleteProduct}>Eliminar Producto</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

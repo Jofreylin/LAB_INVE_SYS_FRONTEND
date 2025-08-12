@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PlusIcon, RotateCcwIcon, ShieldIcon, BoxesIcon } from "lucide-react"
 import { toast } from "sonner"
 import { 
@@ -23,7 +24,8 @@ import {
   WarehouseStock,
   Reservation,
   ReserveStockDTO,
-  ReleaseStockDTO
+  ReleaseStockDTO,
+  ReservationListResponse
 } from "@/lib/types"
 import { ProductService } from "@/lib/services/productService"
 import { WarehouseService } from "@/lib/services/warehouseService"
@@ -32,9 +34,10 @@ import { StockService } from "@/lib/services/stockService"
 export default function StockPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [warehouses, setWarehouses] = useState<Warehouse[]>([])
-  const [reservations, setReservations] = useState<Reservation[]>([])
+  const [reservations, setReservations] = useState<ReservationListResponse[]>([])
   const [availableStock, setAvailableStock] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingReservations, setLoadingReservations] = useState(true)
   const [isReserveDialogOpen, setIsReserveDialogOpen] = useState(false)
   const [reserveForm, setReserveForm] = useState<ReserveStockDTO>({
     productId: 0,
@@ -64,39 +67,55 @@ export default function StockPage() {
       setAvailableStock(availabilityData)
       
       setLoading(false)
+      
+      // Fetch reservations
+      fetchReservations()
     } catch (error) {
       console.error("Error fetching stock data:", error)
-      toast.error("Failed to load stock data")
+      toast.error("No se pudieron cargar los datos de existencias")
       setLoading(false)
+    }
+  }
+
+  const fetchReservations = async () => {
+    try {
+      setLoadingReservations(true)
+      const reservationsData = await StockService.getReservations()
+      setReservations(reservationsData)
+      setLoadingReservations(false)
+    } catch (error) {
+      console.error("Error fetching reservations:", error)
+      toast.error("No se pudieron cargar las reservaciones")
+      setLoadingReservations(false)
     }
   }
 
   const handleReserveStock = async () => {
     if (reserveForm.productId <= 0 || reserveForm.warehouseId <= 0 || reserveForm.quantity <= 0) {
-      toast.error("Please fill all fields with valid values")
+      toast.error("Por favor complete todos los campos con valores válidos")
       return
     }
     
     try {
       const response = await StockService.reserve(reserveForm)
-      toast.success(`Stock reserved successfully. Reservation ID: ${response.reservationId}`)
+      toast.success(`Existencias reservadas con éxito. ID de Reserva: ${response.reservationId}`)
       setIsReserveDialogOpen(false)
       resetReserveForm()
       fetchData()
     } catch (error) {
       console.error("Error reserving stock:", error)
-      toast.error("Failed to reserve stock. Make sure you have enough available quantity.")
+      toast.error("No se pudo reservar el stock. Asegúrese de tener suficiente cantidad disponible.")
     }
   }
 
   const handleReleaseStock = async (reservationId: number) => {
     try {
       await StockService.release({ reservationId })
-      toast.success("Stock released successfully")
+      toast.success("Stock liberado con éxito")
       fetchData()
     } catch (error) {
       console.error("Error releasing stock:", error)
-      toast.error("Failed to release stock")
+      toast.error("No se pudo liberar el stock")
     }
   }
 
@@ -110,12 +129,12 @@ export default function StockPage() {
 
   const getProductName = (productId: number) => {
     const product = products.find(p => p.productId === productId)
-    return product?.name || "Unknown Product"
+    return product?.name || "Producto Desconocido"
   }
 
   const getWarehouseName = (warehouseId: number) => {
     const warehouse = warehouses.find(w => w.warehouseId === warehouseId)
-    return warehouse?.name || "Unknown Warehouse"
+    return warehouse?.name || "Almacén Desconocido"
   }
 
   const getAvailableQuantity = (productId: number) => {
@@ -127,34 +146,41 @@ export default function StockPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight">Stock Management</h2>
-          <p className="text-muted-foreground">Reserve and release stock for products</p>
+          <h2 className="text-2xl font-semibold tracking-tight">Gestión de Stock</h2>
+          <p className="text-muted-foreground">Reserve y libere existencias de productos</p>
         </div>
         <Button onClick={() => setIsReserveDialogOpen(true)}>
           <PlusIcon className="mr-2 h-4 w-4" />
-          Reserve Stock
+          Reservar Stock
         </Button>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Available Stock</CardTitle>
-          <CardDescription>
-            Current available quantities by product
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+      <Tabs defaultValue="stock">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="stock">Existencias Disponibles</TabsTrigger>
+          <TabsTrigger value="reservations">Reservaciones</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="stock">
+          <Card>
+            <CardHeader>
+              <CardTitle>Existencias Disponibles</CardTitle>
+              <CardDescription>
+                Cantidades disponibles actuales por producto
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
           {loading ? (
             <div className="flex justify-center py-8">
-              <p>Loading stock data...</p>
+              <p>Cargando datos de existencias...</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Product ID</TableHead>
-                  <TableHead>Product Name</TableHead>
-                  <TableHead className="text-right">Available Quantity</TableHead>
+                  <TableHead>ID Producto</TableHead>
+                  <TableHead>Nombre del Producto</TableHead>
+                  <TableHead className="text-right">Cantidad Disponible</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
@@ -184,7 +210,7 @@ export default function StockPage() {
                             setIsReserveDialogOpen(true)
                           }}
                         >
-                          Reserve
+                          Reservar
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -192,7 +218,7 @@ export default function StockPage() {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={4} className="h-24 text-center">
-                      No stock data available.
+                      No hay datos de existencias disponibles.
                     </TableCell>
                   </TableRow>
                 )}
@@ -201,30 +227,105 @@ export default function StockPage() {
           )}
         </CardContent>
       </Card>
+    </TabsContent>
+    
+    <TabsContent value="reservations">
+      <Card>
+        <CardHeader>
+          <CardTitle>Reservaciones de Stock</CardTitle>
+          <CardDescription>
+            Listado de reservaciones activas que pueden ser liberadas
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loadingReservations ? (
+            <div className="flex justify-center py-8">
+              <p>Cargando datos de reservaciones...</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>ID Reserva</TableHead>
+                  <TableHead>Producto</TableHead>
+                  <TableHead>Almacén</TableHead>
+                  <TableHead className="text-right">Cantidad</TableHead>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {reservations.length > 0 ? (
+                  reservations.map((reservation) => (
+                    <TableRow key={reservation.reservationId}>
+                      <TableCell>{reservation.reservationId}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <BoxesIcon className="h-4 w-4 text-primary" />
+                          {reservation.productName || getProductName(reservation.productId)}
+                        </div>
+                      </TableCell>
+                      <TableCell>{reservation.warehouseName || getWarehouseName(reservation.warehouseId)}</TableCell>
+                      <TableCell className="text-right font-medium">{reservation.reservedQuantity}</TableCell>
+                      <TableCell>{new Date(reservation.reservationDate).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        <div className={`inline-flex rounded-full px-2 py-1 text-xs ${reservation.statusId === 1 ? "bg-blue-100" : "bg-gray-100"}`}>
+                          {reservation.statusId === 1 ? "Reservado" : "Cancelado"}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {reservation.statusId === 1 && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleReleaseStock(reservation.reservationId)}
+                          >
+                            <RotateCcwIcon className="h-4 w-4 mr-1" />
+                            Liberar
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={7} className="h-24 text-center">
+                      No hay reservaciones activas.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+    </TabsContent>
+  </Tabs>
       
       {/* Reserve Dialog */}
       <Dialog open={isReserveDialogOpen} onOpenChange={setIsReserveDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Reserve Stock</DialogTitle>
+            <DialogTitle>Reservar Stock</DialogTitle>
             <DialogDescription>
-              Reserve product stock from a specific warehouse
+              Reservar existencias de un producto de un almacén específico
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="reserve-product">Product</Label>
+              <Label htmlFor="reserve-product">Producto</Label>
               <Select 
                 onValueChange={(value) => setReserveForm({ ...reserveForm, productId: parseInt(value) })}
                 value={reserveForm.productId > 0 ? reserveForm.productId.toString() : undefined}
               >
                 <SelectTrigger id="reserve-product">
-                  <SelectValue placeholder="Select product" />
+                  <SelectValue placeholder="Seleccionar producto" />
                 </SelectTrigger>
                 <SelectContent>
                   {products.map((product) => (
                     <SelectItem key={product.productId} value={product.productId.toString()}>
-                      {product.name} (Available: {getAvailableQuantity(product.productId)})
+                      {product.name} (Disponible: {getAvailableQuantity(product.productId)})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -232,13 +333,13 @@ export default function StockPage() {
             </div>
             
             <div className="grid gap-2">
-              <Label htmlFor="reserve-warehouse">Warehouse</Label>
+              <Label htmlFor="reserve-warehouse">Almacén</Label>
               <Select 
                 onValueChange={(value) => setReserveForm({ ...reserveForm, warehouseId: parseInt(value) })}
                 value={reserveForm.warehouseId > 0 ? reserveForm.warehouseId.toString() : undefined}
               >
                 <SelectTrigger id="reserve-warehouse">
-                  <SelectValue placeholder="Select warehouse" />
+                  <SelectValue placeholder="Seleccionar almacén" />
                 </SelectTrigger>
                 <SelectContent>
                   {warehouses.map((warehouse) => (
@@ -251,25 +352,25 @@ export default function StockPage() {
             </div>
             
             <div className="grid gap-2">
-              <Label htmlFor="reserve-quantity">Quantity</Label>
+              <Label htmlFor="reserve-quantity">Cantidad</Label>
               <Input
                 id="reserve-quantity"
                 type="number"
                 min={1}
                 value={reserveForm.quantity > 0 ? reserveForm.quantity : ""}
                 onChange={(e) => setReserveForm({ ...reserveForm, quantity: parseInt(e.target.value) || 0 })}
-                placeholder="Enter quantity to reserve"
+                placeholder="Ingrese la cantidad a reservar"
               />
               {reserveForm.productId > 0 && (
                 <p className="text-xs text-muted-foreground">
-                  Available: {getAvailableQuantity(reserveForm.productId)}
+                  Disponible: {getAvailableQuantity(reserveForm.productId)}
                 </p>
               )}
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsReserveDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleReserveStock}>Reserve Stock</Button>
+            <Button variant="outline" onClick={() => setIsReserveDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleReserveStock}>Reservar Stock</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

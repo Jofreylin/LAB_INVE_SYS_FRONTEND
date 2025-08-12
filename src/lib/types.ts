@@ -173,3 +173,28 @@ export interface Reservation {
   product?: Product;
   warehouse?: Warehouse;
 }
+
+export interface ReservationListResponse {
+  reservationId: number;
+  productId: number;
+  productName?: string;
+  warehouseId: number;
+  warehouseName?: string;
+  reservedQuantity: number;
+  statusId: number;
+  reservationDate: string;
+}
+
+// Monthly statistics interfaces
+export interface MonthlyStats {
+  year: number;
+  month: number;
+  monthName: string;
+  totalInbound: number;
+  totalOutbound: number;
+  totalPurchaseCost: number;
+}
+
+export interface ProductMovementStats {
+  monthlyStats: MonthlyStats[];
+}

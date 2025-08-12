@@ -3,7 +3,8 @@ import {
   InventoryMovement, 
   InboundDTO, 
   OutboundDTO, 
-  InventoryMovementResponse 
+  InventoryMovementResponse,
+  ProductMovementStats
 } from '../types';
 
 const ENDPOINT = '/inventory';
@@ -21,6 +22,12 @@ export const InventoryService = {
 
   getMovements: async (): Promise<InventoryMovement[]> => {
     const response = await api.get(`${ENDPOINT}/movements`);
+    return response.data;
+  },
+
+  getMonthlyStats: async (year?: number): Promise<ProductMovementStats> => {
+    const url = year ? `${ENDPOINT}/monthly-stats?year=${year}` : `${ENDPOINT}/monthly-stats`;
+    const response = await api.get(url);
     return response.data;
   }
 };

@@ -3,7 +3,8 @@ import {
   ReserveStockDTO, 
   ReserveStockResponse, 
   ReleaseStockDTO, 
-  ReleaseStockResponse 
+  ReleaseStockResponse,
+  ReservationListResponse
 } from '../types';
 
 const ENDPOINT = '/stock';
@@ -16,6 +17,11 @@ export const StockService = {
 
   release: async (data: ReleaseStockDTO): Promise<ReleaseStockResponse> => {
     const response = await api.post(`${ENDPOINT}/release`, data);
+    return response.data;
+  },
+
+  getReservations: async (): Promise<ReservationListResponse[]> => {
+    const response = await api.get(`${ENDPOINT}/reservations`);
     return response.data;
   }
 };

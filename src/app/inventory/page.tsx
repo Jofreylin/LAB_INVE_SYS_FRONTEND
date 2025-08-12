@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { BoxesIcon, PlusIcon, ArrowDownIcon, ArrowUpIcon } from "lucide-react"
+import { BoxesIcon, PlusIcon, ArrowDownIcon, ArrowUpIcon, CalendarIcon, DollarSignIcon } from "lucide-react"
 import { toast } from "sonner"
 import { 
   InventoryMovement, 
@@ -66,46 +66,46 @@ export default function InventoryPage() {
       setProducts(productsData.filter(p => !p.isDeleted))
       setWarehouses(warehousesData.filter(w => !w.isDeleted))
     } catch (error) {
-      console.error("Error fetching inventory data:", error)
-      toast.error("Failed to load inventory data")
+      console.error("Error al obtener datos de inventario:", error)
+      toast.error("No se pudo cargar la información de inventario")
     } finally {
       setLoading(false)
     }
   }
 
   const handleInboundSubmit = async () => {
-    if (inboundForm.productId <= 0 || inboundForm.warehouseId <= 0 || inboundForm.quantity <= 0) {
-      toast.error("Please fill all fields with valid values")
+    if (inboundForm.productId <= 0 || inboundForm.warehouseId <= 0 || inboundForm.quantity <= 0 || !inboundForm.productExpirationDate || inboundForm.purchasePrice <= 0) {
+      toast.error("Por favor complete todos los campos con valores válidos")
       return
     }
     
     try {
       await InventoryService.inbound(inboundForm)
-      toast.success("Product received successfully")
+      toast.success("Producto recibido correctamente")
       setIsInboundDialogOpen(false)
       resetInboundForm()
       fetchData()
     } catch (error) {
-      console.error("Error processing inbound:", error)
-      toast.error("Failed to process inbound movement")
+      console.error("Error al procesar la entrada:", error)
+      toast.error("No se pudo procesar la entrada de inventario")
     }
   }
 
   const handleOutboundSubmit = async () => {
     if (outboundForm.productId <= 0 || outboundForm.warehouseId <= 0 || outboundForm.quantity <= 0) {
-      toast.error("Please fill all fields with valid values")
+      toast.error("Por favor complete todos los campos con valores válidos")
       return
     }
     
     try {
       await InventoryService.outbound(outboundForm)
-      toast.success("Product shipped successfully")
+      toast.success("Producto despachado correctamente")
       setIsOutboundDialogOpen(false)
       resetOutboundForm()
       fetchData()
     } catch (error) {
-      console.error("Error processing outbound:", error)
-      toast.error("Failed to process outbound movement")
+      console.error("Error al procesar la salida:", error)
+      toast.error("No se pudo procesar la salida de inventario")
     }
   }
 
@@ -129,7 +129,7 @@ export default function InventoryPage() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
-    return new Intl.DateTimeFormat('en-US', { 
+    return new Intl.DateTimeFormat('es-ES', { 
       year: 'numeric', 
       month: 'short', 
       day: 'numeric',
@@ -140,63 +140,66 @@ export default function InventoryPage() {
 
   const getProductName = (productId: number) => {
     const product = products.find(p => p.productId === productId)
-    return product?.name || "Unknown Product"
+    return product?.name || "Producto Desconocido"
   }
 
   const getWarehouseName = (warehouseId: number) => {
     const warehouse = warehouses.find(w => w.warehouseId === warehouseId)
-    return warehouse?.name || "Unknown Warehouse"
+    return warehouse?.name || "Almacén Desconocido"
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight">Inventory</h2>
-          <p className="text-muted-foreground">Manage product movements in and out of warehouses</p>
+          <h2 className="text-2xl font-semibold tracking-tight">Inventario</h2>
+          <p className="text-muted-foreground">Gestione los movimientos de productos dentro y fuera de los almacenes</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setIsInboundDialogOpen(true)}>
             <ArrowDownIcon className="mr-2 h-4 w-4" />
-            Inbound
+            Entrada
           </Button>
           <Button onClick={() => setIsOutboundDialogOpen(true)}>
             <ArrowUpIcon className="mr-2 h-4 w-4" />
-            Outbound
+            Salida
           </Button>
         </div>
       </div>
 
       <Tabs defaultValue="all" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="all">All Movements</TabsTrigger>
-          <TabsTrigger value="inbound">Inbound</TabsTrigger>
-          <TabsTrigger value="outbound">Outbound</TabsTrigger>
+          <TabsTrigger value="all">Todos los Movimientos</TabsTrigger>
+          <TabsTrigger value="inbound">Entradas</TabsTrigger>
+          <TabsTrigger value="outbound">Salidas</TabsTrigger>
         </TabsList>
         
         <TabsContent value="all" className="space-y-4">
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle>All Inventory Movements</CardTitle>
+              <CardTitle>Todos los Movimientos de Inventario</CardTitle>
               <CardDescription>
-                Complete history of inventory activity
+                Historial completo de la actividad de inventario
               </CardDescription>
             </CardHeader>
             <CardContent>
               {loading ? (
                 <div className="flex justify-center py-8">
-                  <p>Loading inventory movements...</p>
+                  <p>Cargando movimientos de inventario...</p>
                 </div>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>ID</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Product</TableHead>
-                      <TableHead>Warehouse</TableHead>
-                      <TableHead className="text-right">Quantity</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead>Producto</TableHead>
+                      <TableHead>Almacén</TableHead>
+                      <TableHead>Cantidad</TableHead>
+                      <TableHead className="hidden md:table-cell">Precio Compra Unitario</TableHead>
+                      <TableHead className="hidden md:table-cell">Precio Total</TableHead>
+                      <TableHead className="hidden md:table-cell">Expiración</TableHead>
+                      <TableHead>Fecha</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -206,29 +209,38 @@ export default function InventoryPage() {
                           <TableCell className="font-medium">{movement.movementId}</TableCell>
                           <TableCell>
                             <div className={`inline-flex rounded-full px-2 py-1 text-xs ${
-                              movement.movementType === "Inbound"
+                              movement.movementType === "ENTRY"
                                 ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
                                 : "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
                             }`}>
-                              {movement.movementType}
+                              {movement.movementType === "ENTRY" ? "Entrada" : "Salida"}
                             </div>
                           </TableCell>
-                          <TableCell>{formatDate(movement.movementDate)}</TableCell>
                           <TableCell>
                             {movement.product?.name || getProductName(movement.productId || 0)}
                           </TableCell>
                           <TableCell>
                             {movement.warehouse?.name || getWarehouseName(movement.warehouseId || 0)}
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell>
                             {movement.quantity}
                           </TableCell>
+                          <TableCell className="hidden md:table-cell">
+                            {movement.purchasePrice ? `$${movement.purchasePrice.toFixed(2)}` : "—"}
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell">
+                            {movement.purchasePrice ? `$${(movement.purchasePrice * movement.quantity).toFixed(2)}` : "—"}
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell">
+                            {movement.productExpirationDate ? formatDate(movement.productExpirationDate) : "—"}
+                          </TableCell>
+                          <TableCell>{formatDate(movement.movementDate)}</TableCell>
                         </TableRow>
                       ))
                     ) : (
                       <TableRow>
                         <TableCell colSpan={6} className="h-24 text-center">
-                          No movements found.
+                          No se encontraron movimientos.
                         </TableCell>
                       </TableRow>
                     )}
@@ -242,31 +254,31 @@ export default function InventoryPage() {
         <TabsContent value="inbound" className="space-y-4">
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle>Inbound Movements</CardTitle>
+              <CardTitle>Movimientos de Entrada</CardTitle>
               <CardDescription>
-                Products received into inventory
+                Productos recibidos en el inventario
               </CardDescription>
             </CardHeader>
             <CardContent>
               {loading ? (
                 <div className="flex justify-center py-8">
-                  <p>Loading inbound movements...</p>
+                  <p>Cargando movimientos de entrada...</p>
                 </div>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>ID</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Product</TableHead>
-                      <TableHead>Warehouse</TableHead>
-                      <TableHead className="text-right">Quantity</TableHead>
+                      <TableHead>Fecha</TableHead>
+                      <TableHead>Producto</TableHead>
+                      <TableHead>Almacén</TableHead>
+                      <TableHead className="text-right">Cantidad</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {movements.filter(m => m.movementType === "Inbound").length > 0 ? (
+                    {movements.filter(m => m.movementType === "ENTRY").length > 0 ? (
                       movements
-                        .filter(m => m.movementType === "Inbound")
+                        .filter(m => m.movementType === "ENTRY")
                         .map((movement, index) => (
                           <TableRow key={movement.movementId || index}>
                             <TableCell className="font-medium">{movement.movementId}</TableCell>
@@ -285,7 +297,7 @@ export default function InventoryPage() {
                     ) : (
                       <TableRow>
                         <TableCell colSpan={5} className="h-24 text-center">
-                          No inbound movements found.
+                          No se encontraron movimientos de entrada.
                         </TableCell>
                       </TableRow>
                     )}
@@ -299,31 +311,31 @@ export default function InventoryPage() {
         <TabsContent value="outbound" className="space-y-4">
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle>Outbound Movements</CardTitle>
+              <CardTitle>Movimientos de Salida</CardTitle>
               <CardDescription>
-                Products shipped from inventory
+                Productos despachados desde el inventario
               </CardDescription>
             </CardHeader>
             <CardContent>
               {loading ? (
                 <div className="flex justify-center py-8">
-                  <p>Loading outbound movements...</p>
+                  <p>Cargando movimientos de salida...</p>
                 </div>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>ID</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Product</TableHead>
-                      <TableHead>Warehouse</TableHead>
-                      <TableHead className="text-right">Quantity</TableHead>
+                      <TableHead>Fecha</TableHead>
+                      <TableHead>Producto</TableHead>
+                      <TableHead>Almacén</TableHead>
+                      <TableHead className="text-right">Cantidad</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {movements.filter(m => m.movementType === "Outbound").length > 0 ? (
+                    {movements.filter(m => m.movementType === "EXIT").length > 0 ? (
                       movements
-                        .filter(m => m.movementType === "Outbound")
+                        .filter(m => m.movementType === "EXIT")
                         .map((movement, index) => (
                           <TableRow key={movement.movementId || index}>
                             <TableCell className="font-medium">{movement.movementId}</TableCell>
@@ -342,7 +354,7 @@ export default function InventoryPage() {
                     ) : (
                       <TableRow>
                         <TableCell colSpan={5} className="h-24 text-center">
-                          No outbound movements found.
+                          No se encontraron movimientos de salida.
                         </TableCell>
                       </TableRow>
                     )}
@@ -414,6 +426,38 @@ export default function InventoryPage() {
                 onChange={(e) => setInboundForm({ ...inboundForm, quantity: parseInt(e.target.value) || 0 })}
                 placeholder="Ingrese la cantidad"
               />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="inbound-expiration-date">Fecha de Expiración</Label>
+              <div className="relative">
+                <CalendarIcon className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="inbound-expiration-date"
+                  type="date"
+                  className="pl-8"
+                  value={inboundForm.productExpirationDate}
+                  onChange={(e) => setInboundForm({ ...inboundForm, productExpirationDate: e.target.value })}
+                  placeholder="Seleccione fecha de expiración"
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="inbound-purchase-price">Precio de Compra Unitario</Label>
+              <div className="relative">
+                <DollarSignIcon className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="inbound-purchase-price"
+                  type="number"
+                  className="pl-8"
+                  min={0}
+                  step="0.01"
+                  value={inboundForm.purchasePrice > 0 ? inboundForm.purchasePrice : ""}
+                  onChange={(e) => setInboundForm({ ...inboundForm, purchasePrice: parseFloat(e.target.value) || 0 })}
+                  placeholder="0.00"
+                />
+              </div>
             </div>
           </div>
           <DialogFooter>
